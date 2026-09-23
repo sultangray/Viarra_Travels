@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, ArrowRight, Check, PartyPopper, Plus, X, Info, ShieldCheck, FileText, Lock } from "lucide-react";
+import heroImg from "@/assets/hero-beach.jpg";
 import { loadPlanner, savePlanner, clearPlanner, type PlannerData } from "@/lib/planner-store";
 import { useTranslation } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -9,9 +10,9 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/planner")({
   head: () => ({
     meta: [
-      { title: "Travel Planner — Viarra Travels" },
-      { name: "description", content: "Complete your personalised travel plan. A guided, multi-step questionnaire — with auto-save." },
-      { property: "og:title", content: "Travel Planner — Viarra Travels" },
+      { title: "Travel Planner · Viarra Travels" },
+      { name: "description", content: "Complete your personalised travel plan. A guided, multi step questionnaire with auto save." },
+      { property: "og:title", content: "Travel Planner · Viarra Travels" },
       { property: "og:description", content: "Design your trip in 8 quick steps." },
     ],
   }),
@@ -50,7 +51,7 @@ function Planner() {
 
   const progress = useMemo(() => ((step + 1) / SECTIONS.length) * 100, [step]);
 
-  // Strict Validation: Prevents clicking "Next" or Submitting if required fields are missing
+  // Strict Validation: Prevents clicking Next or Submitting if required fields are missing
   const canProceed = () => {
     if (step === 0) return !!data.fullName && !!data.email && !!data.phone;
     if (step === 1) {
@@ -135,7 +136,17 @@ function Planner() {
   const isTermsReady = !!data.acknowledged && !!data.supportHoursAck && !!data.termsAck;
 
   return (
-    <div className="pt-28 pb-24 px-4 md:px-6 gradient-soft min-h-screen">
+    <div className="relative min-h-screen pt-28 pb-24 px-4 md:px-6">
+      {/* Background image identical to the main page */}
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <img
+          src={heroImg}
+          alt="Tropical background"
+          className="h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-background/85 backdrop-blur-md" />
+      </div>
+
       <div className="mx-auto max-w-3xl">
         <div className="text-center mb-8 flex flex-col items-center">
           <div className="mb-4 text-2xl font-bold tracking-widest text-primary uppercase">
@@ -144,7 +155,7 @@ function Planner() {
           <div className="inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium">
             {language === "sl" ? "Korak" : "Step"} {step + 1} / {SECTIONS.length} · {SECTIONS[step]}
           </div>
-          <h1 className="mt-4 font-display text-4xl md:text-5xl font-bold">
+          <h1 className="mt-4 font-display text-4xl md:text-5xl font-bold text-foreground">
             {language === "sl" ? "Oblikujte svoje potovanje" : "Design your trip"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -154,7 +165,7 @@ function Planner() {
           </p>
         </div>
 
-        {/* Progress Bar & Clickable Navigation */}
+        {/* Progress Bar and Clickable Navigation */}
         <div className="mb-8">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary/60">
             <motion.div
@@ -181,7 +192,7 @@ function Planner() {
           </div>
         </div>
 
-        <div className="rounded-3xl bg-white shadow-soft p-6 md:p-10">
+        <div className="rounded-3xl bg-white/95 backdrop-blur-sm shadow-soft p-6 md:p-10 border border-white/40">
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
@@ -227,7 +238,7 @@ function Planner() {
                 }`}
               >
                 {!isTermsReady && <Lock size={15} />}
-                {language === "sl" ? "Potrdi in oddaj načrt" : "Complete booking & submit"}
+                {language === "sl" ? "Potrdi in oddaj načrt" : "Complete booking and submit"}
                 {isTermsReady && <Check size={16} />}
               </button>
             )}
@@ -240,7 +251,7 @@ function Planner() {
           width: 100%;
           border-radius: 0.9rem;
           border: 1px solid var(--color-border);
-          background: rgba(255,255,255,0.85);
+          background: rgba(255,255,255,0.9);
           padding: 0.7rem 0.95rem;
           font-size: 0.925rem;
           transition: all 0.2s;
@@ -253,7 +264,7 @@ function Planner() {
         }
         .label { display: block; margin-bottom: 0.4rem; font-size: 0.78rem; font-weight: 500; color: var(--color-muted-foreground); }
         .req { color: #ef4444; margin-left: 3px; font-weight: bold; }
-        .chip { border-radius: 999px; padding: 0.55rem 1rem; font-size: 0.85rem; font-weight: 500; background: rgba(255,255,255,0.7); border: 1px solid var(--color-border); cursor: pointer; transition: all 0.15s; }
+        .chip { border-radius: 999px; padding: 0.55rem 1rem; font-size: 0.85rem; font-weight: 500; background: rgba(255,255,255,0.85); border: 1px solid var(--color-border); cursor: pointer; transition: all 0.15s; }
         .chip:hover { background: var(--color-accent); }
         .chip[data-active="true"] { background: var(--color-primary); color: var(--color-primary-foreground); border-color: transparent; }
       `}</style>
@@ -380,7 +391,7 @@ function SectionPassengers({ data, set, language }: any) {
               <button
                 type="button"
                 onClick={() => removePassenger(i)}
-                className="absolute top-3 right-3 text-muted-foreground hover:text-red-500"
+                className="absolute top-3 right-3 text-muted-foreground hover:text-red-500 cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -639,16 +650,18 @@ function SectionTransport({ data, set, language }: any) {
         <ChipGroup multi={false} options={["Plane", "Bus", "Train", "Self-drive", "Recommend me the best"]} value={data.mainTransport} onChange={(v) => set("mainTransport", v)} />
       </Field>
 
-      <Field label={language === "sl" ? "Prevoz na destinaciji" : "Destination transport"} required>
+      {/* UPDATED: Transport at the destination */}
+      <Field label={language === "sl" ? "Prevoz na destinaciji" : "Transport at the destination"} required>
         <ChipGroup multi options={["Car rental", "Scooter", "Taxi / Uber", "Public transport", "Recommend me what's best"]} value={data.destinationTransport} onChange={(v) => set("destinationTransport", v)} />
       </Field>
 
+      {/* UPDATED: Main Transport Budget (per person) */}
       <Grid>
-        <Field label={language === "sl" ? "Proračun za glavni prevoz (skupaj)" : "Main Transport Budget (Total)"} required>
+        <Field label={language === "sl" ? "Proračun za glavni prevoz (na osebo)" : "Main Transport Budget (per person)"} required>
           <input className="input" placeholder="e.g. €500" value={data.transportBudget ?? ""} onChange={(e) => set("transportBudget", e.target.value)} />
         </Field>
         {(data.transportCityToAirport || data.transportAirportToCity) && (
-          <Field label={language === "sl" ? "Proračun za prevoz do ali z letališča" : "Budget for transport to or from airport"} required>
+          <Field label={language === "sl" ? "Proračun za prevoz do ali z letališča (na osebo)" : "Budget for transport to or from airport (per person)"} required>
             <input className="input" placeholder="e.g. €50 for Flixbus / train / shuttle" value={data.airportTransportBudget ?? ""} onChange={(e) => set("airportTransportBudget", e.target.value)} />
           </Field>
         )}
@@ -775,34 +788,53 @@ function SectionAccommodation({ data, set, language }: any) {
           </div>
         </Field>
 
+        {/* UPDATED: Book Yourself Exact Copy */}
         {data.bookingPreference === "Book yourself" && (
-          <div className="bg-orange-50 text-orange-800 p-5 rounded-2xl text-sm border border-orange-200 leading-relaxed space-y-3">
-            <div className="font-bold">Zadeva: Končna izbira: povezave za rezervacijo</div>
+          <div className="bg-orange-50 text-orange-950 p-5 rounded-2xl text-sm border border-orange-200 leading-relaxed space-y-3">
+            <div className="font-bold tracking-wide">
+              {language === "sl"
+                ? "NAVODILA ZA PLAČILO (če rezervacije opravite sami)"
+                : "PAYMENT INSTRUCTIONS (if booking yourself)"}
+            </div>
             <p>
-              Pozdravljeni,
-              na podlagi vaše potrditve spodaj označite končne izbire, nato vam pošljem neposredne povezave in navodila za rezervacijo.
+              {language === "sl"
+                ? "Po oddaji obrazca bomo preverili vaše želje, razpoložljivost in aktualne cene ter vam po e-pošti poslali predlog potovanja. Če bodo potrebne spremembe, jih bomo z vami uskladili pred plačilom."
+                : "After submitting the form, we will review your preferences, availability, and live prices, and email you a tailored travel proposal. If adjustments are required, we will coordinate them together before payment."}
             </p>
             <p>
-              <strong>Pomembno glede cen:</strong><br />
-              Cene prevozov in nastanitev so dinamične in se lahko spreminjajo tudi večkrat dnevno. Priporočam, da rezervacijo opravite čim prej, saj s tem zmanjšate tveganje spremembe cene ali razpoložljivosti.
+              {language === "sl"
+                ? "Ko potrdite predlog, vam bomo poslali znesek in podatke za plačilo naše storitve. Po prejemu plačila vam bomo poslali neposredne povezave in navodila, s katerimi boste rezervacije opravili sami."
+                : "Once you confirm the proposal, we will send you the invoice and payment details for our planning service. Upon receipt of payment, we will deliver direct booking links and clear instructions for you to finalize the bookings yourself."}
             </p>
             <p>
-              Po potrditvi vam pošljem povezave, kjer rezervacijo opravite sami. Pred plačilom preverite datume, imena in pogoje odpovedi.
+              {language === "sl"
+                ? "Ker se cene in razpoložljivost lahko hitro spremenijo, priporočamo, da rezervacije opravite čim prej. Pred plačilom pri posameznem ponudniku preverite končno ceno, datume, podatke potnikov in pogoje odpovedi."
+                : "Because fares and availability fluctuate dynamically, we recommend completing your bookings promptly. Before confirming payment with each provider, please double check the final fare, dates, passenger details, and cancellation terms."}
             </p>
           </div>
         )}
 
         {data.bookingPreference === "Transfer to me" && (
           <div className="bg-blue-50 text-blue-900 p-5 rounded-2xl text-sm border border-blue-200 leading-relaxed space-y-3">
-            <div className="font-bold tracking-wide">NAVODILA ZA PLAČILO (če rezervacije opravimo za vas)</div>
+            <div className="font-bold tracking-wide">
+              {language === "sl"
+                ? "NAVODILA ZA PLAČILO (če rezervacije opravimo za vas)"
+                : "PAYMENT INSTRUCTIONS (if we book for you)"}
+            </div>
             <p>
-              Po oddaji obrazca bomo preverili razpoložljivost in aktualne cene ter vam po e-pošti poslali ponudbo.
+              {language === "sl"
+                ? "Po oddaji obrazca bomo preverili razpoložljivost in aktualne cene ter vam po e-pošti poslali ponudbo."
+                : "After submitting the form, we will check availability and live pricing, then send you a complete proposal via email."}
             </p>
             <p>
-              Ker se cene in razpoložljivost lahko hitro spremenijo, priporočamo, da smo med rezervacijo v stiku prek sporočil na WhatsAppu. Poslali vam bomo nekaj možnih terminov, vi pa boste izbrali tistega, ko boste dosegljivi. Če vam WhatsApp ne ustreza, lahko komuniciramo tudi po e-pošti ali Viberju.
+              {language === "sl"
+                ? "Ker se cene in razpoložljivost lahko hitro spremenijo, priporočamo, da smo med rezervacijo v stiku prek sporočil na WhatsAppu. Poslali vam bomo nekaj možnih terminov, vi pa boste izbrali tistega, ko boste dosegljivi. Če vam WhatsApp ne ustreza, lahko komuniciramo tudi po e-pošti ali Viberju."
+                : "Because prices and capacity shift rapidly, we recommend staying in touch via WhatsApp during booking coordination. We will suggest several time slots for you to choose when you are reachable. If you prefer, we can also communicate via email or Viber."}
             </p>
             <p>
-              Pred rezervacijo vam bomo poslali končni znesek in podatke za plačilo. Rezervacije bomo opravili, ko bo plačilo vidno na našem računu. Če se cena medtem spremeni, vas bomo o tem obvestili in rezervacijo opravili šele po vaši potrditvi.
+              {language === "sl"
+                ? "Pred rezervacijo vam bomo poslali končni znesek in podatke za plačilo. Rezervacije bomo opravili, ko bo plačilo vidno na našem računu. Če se cena medtem spremeni, vas bomo o tem obvestili in rezervacijo opravili šele po vaši potrditvi."
+                : "Before executing the booking, we will provide the final amount and transfer details. Bookings are made once the payment clears on our account. Should fares change in the meantime, we will notify you and only proceed upon your confirmation."}
             </p>
           </div>
         )}

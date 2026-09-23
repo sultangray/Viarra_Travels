@@ -20,7 +20,7 @@ export function Footer() {
           <p className="mt-4 max-w-sm text-sm text-muted-foreground leading-relaxed">
             {language === "sl"
               ? "Osebno načrtovanje potovanj, prilagojeno vašim željam. Leti, nastanitve, itinerarji in logistika — vse urejeno prek spleta."
-              : "Personal travel planning designed around you. Flights, accommodation, itineraries, and logistics — organised entirely online."}
+              : "Personal travel planning designed around you. Flights, accommodation, itineraries, and logistics organised entirely online."}
           </p>
 
           {/* Povezave do družbenih omrežij brez Facebooka */}
