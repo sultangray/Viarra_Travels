@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import heroImg from "@/assets/hero-beach.jpg";
 import { QuickPlanner } from "@/components/site/QuickPlanner";
+import { useTranslation } from "@/lib/i18n";
 
 const SLOGANS = [
   "We Plan. You Travel.",
@@ -66,6 +67,8 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
+
+
 function Home() {
   const [slogan, setSlogan] = useState(0);
   useEffect(() => {
@@ -75,7 +78,7 @@ function Home() {
 
   return (
     <div>
-      {/* HERO */}
+      {/* HERO SECTION */}
       <section className="relative min-h-screen overflow-hidden">
         <div className="absolute inset-0">
           <img src={heroImg} alt="Luxury beach" className="h-full w-full object-cover" width={1920} height={1280} />
@@ -131,7 +134,7 @@ function Home() {
       {/* QUICK PLANNER */}
       <QuickPlanner />
 
-      {/* WHY */}
+      {/* WHY CHOOSE VIARRA */}
       <section className="px-6 py-24">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl text-center">
@@ -246,7 +249,7 @@ function Home() {
       {/* PRICING */}
       <Pricing />
 
-      {/* CTA */}
+      {/* FINAL CALL TO ACTION */}
       <section className="px-6 py-28">
         <div className="mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] gradient-beach p-12 md:p-16 shadow-soft text-center">
           <h2 className="font-display text-4xl md:text-6xl font-bold">Ready to start planning?</h2>
@@ -268,10 +271,10 @@ function Pricing() {
     { name: "Standard Planning", price: "€150", desc: "Up to 2 adults", highlight: true },
     { name: "Additional Adult", price: "€30", desc: "Per extra adult" },
     { name: "Additional Child", price: "€15", desc: "Per child" },
-    { name: "City Break", price: "€80", desc: "Short getaway planning up to 4 days" },
+    { name: "City Break", price: "€80", desc: "Short getaway planning up to 5 days" },
   ];
   const support = [
-    { days: "5 Days", price: "€60" },
+    { days: "5 Days", price: "€80" },
     { days: "14 Days", price: "€100" },
     { days: "30 Days", price: "€150" },
   ];
@@ -280,7 +283,9 @@ function Pricing() {
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-display text-4xl md:text-5xl font-bold">Simple, transparent pricing</h2>
-          <p className="mt-4 text-muted-foreground">Service fees cover planning only. Flights, accommodation, transport and visa fees are paid directly to providers.</p>
+          <p className="mt-4 text-muted-foreground">
+            Service fees cover planning only. Flights, accommodation, transport and visa fees are paid directly to providers.
+          </p>
         </div>
 
         <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4">

@@ -7,11 +7,13 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { MessageCircle } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
+import { LanguageProvider, useTranslation } from "@/lib/i18n";
 import { Toaster } from "sonner";
 
 function NotFoundComponent() {
@@ -20,7 +22,12 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <p className="mt-4 text-muted-foreground">This page drifted off the map.</p>
-        <a href="/" className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-primary-foreground font-medium">Go home</a>
+        <a
+          href="/"
+          className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-primary-foreground font-medium shadow-soft hover:bg-accent transition-all"
+        >
+          Go home
+        </a>
       </div>
     </div>
   );
@@ -31,14 +38,18 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-2xl font-semibold">Something went wrong</h1>
         <p className="mt-2 text-sm text-muted-foreground">Please try again.</p>
         <button
-          onClick={() => { router.invalidate(); reset(); }}
-          className="mt-6 rounded-full bg-primary px-6 py-3 text-primary-foreground font-medium"
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
+          className="mt-6 rounded-full bg-primary px-6 py-3 text-primary-foreground font-medium shadow-soft hover:bg-accent transition-all"
         >
           Try again
         </button>
@@ -87,18 +98,44 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function MainLayout() {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Navbar />
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      <Footer />
+
+      {/* Floating WhatsApp Quick-Chat Widget */}
+      <a
+        href="https://wa.me/38640973329"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Chat with us on WhatsApp"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-full bg-[#25D366] px-4 py-3 text-white shadow-xl hover:bg-[#20bd5a] hover:scale-105 active:scale-95 transition-all duration-200 group"
+      >
+        <MessageCircle size={22} className="shrink-0 transition-transform group-hover:rotate-12" />
+        <span className="text-sm font-semibold tracking-wide pr-1">
+          {t("chatWithUs")}
+        </span>
+      </a>
+
+      <Toaster position="top-center" richColors />
+    </div>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-screen flex-col">
-        <Navbar />
-        <main className="flex-1">
-          <Outlet />
-        </main>
-        <Footer />
-      </div>
-      <Toaster position="top-center" richColors />
+      <LanguageProvider>
+        <MainLayout />
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
