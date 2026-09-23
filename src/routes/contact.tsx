@@ -2,13 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Phone, Mail, MessageCircle, Clock, MapPin, Send } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/lib/i18n";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — Viarra Travels" },
-      { name: "description", content: "Get in touch with Viarra Travels. Phone, WhatsApp, email — we're here to help you plan." },
-      { property: "og:title", content: "Contact — Viarra Travels" },
+      { title: "Contact · Viarra Travels" },
+      { name: "description", content: "Get in touch with Viarra Travels. Phone, WhatsApp, email, we are here to help you plan." },
+      { property: "og:title", content: "Contact · Viarra Travels" },
       { property: "og:description", content: "Get in touch with our travel planners." },
     ],
   }),
@@ -17,13 +18,18 @@ export const Route = createFileRoute("/contact")({
 
 function Contact() {
   const [sending, setSending] = useState(false);
+  const { language } = useTranslation();
 
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSending(true);
     setTimeout(() => {
       setSending(false);
-      toast.success("Message sent — we'll be in touch shortly.");
+      toast.success(
+        language === "sl"
+          ? "Sporočilo je bilo uspešno poslano, odgovorili vam bomo v najkrajšem možnem času."
+          : "Message sent, we will be in touch shortly."
+      );
       (e.target as HTMLFormElement).reset();
     }, 800);
   };
@@ -32,21 +38,27 @@ function Contact() {
     <div className="pt-32 pb-24 px-6 gradient-soft min-h-screen">
       <div className="mx-auto max-w-6xl">
         <div className="text-center max-w-2xl mx-auto">
-          <h1 className="font-display text-5xl md:text-7xl font-bold tracking-tight">Let's talk</h1>
-          <p className="mt-4 text-muted-foreground">
-            Have a question before you start planning? We reply within one business day.
+          <h1 className="font-display text-5xl md:text-7xl font-bold tracking-tight text-foreground">
+            {language === "sl" ? "Stopite v stik" : "Let's talk"}
+          </h1>
+          <p className="mt-4 text-muted-foreground leading-relaxed">
+            {language === "sl"
+              ? "Imate vprašanje pred pričetkom načrtovanja? Odgovorimo vam v roku enega delovnega dne."
+              : "Have a question before you start planning? We reply within one business day."}
           </p>
         </div>
 
         <div className="mt-14 grid gap-6 md:grid-cols-2 items-start">
-          {/* Left — Contact Details */}
+          {/* Left Column: Direct channels */}
           <div className="rounded-3xl bg-card p-8 md:p-10 shadow-soft space-y-6">
-            <h2 className="font-display text-xl font-bold mb-4">Direct channels</h2>
+            <h2 className="font-display text-xl font-bold mb-4 text-foreground">
+              {language === "sl" ? "Neposredni stik" : "Direct channels"}
+            </h2>
 
             <RowLink
               href="tel:+38640973329"
               icon={<Phone size={18} />}
-              label="Phone"
+              label={language === "sl" ? "Telefon" : "Phone"}
               value="+386 40 973 329"
             />
             <RowLink
@@ -59,55 +71,83 @@ function Contact() {
             <RowLink
               href="mailto:viarratravels@gmail.com"
               icon={<Mail size={18} />}
-              label="Email"
+              label={language === "sl" ? "E-poštni naslov" : "Email"}
               value="viarratravels@gmail.com"
             />
             <Row
               icon={<Clock size={18} />}
-              label="Office hours"
-              value="Mon – Fri · 9:00 – 17:00 (GMT+2)"
+              label={language === "sl" ? "Delovni čas" : "Office hours"}
+              value={language === "sl" ? "Pon do Pet, 9:00 do 17:00 (GMT+2)" : "Mon to Fri, 9:00 to 17:00 (GMT+2)"}
             />
 
             <div className="mt-6 overflow-hidden rounded-2xl aspect-[16/10] relative gradient-beach">
               <div className="absolute inset-0 grid place-items-center">
-                <div className="glass rounded-2xl px-5 py-3 flex items-center gap-2 text-sm font-medium shadow-sm">
-                  <MapPin size={16} className="text-primary" /> Slovenia · Serving worldwide
+                <div className="glass rounded-2xl px-5 py-3 flex items-center gap-2 text-sm font-medium shadow-sm text-foreground">
+                  <MapPin size={16} className="text-primary" />
+                  {language === "sl" ? "Slovenija · Dosegljivi po vsem svetu" : "Slovenia · Serving worldwide"}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right — Inquiry Form */}
+          {/* Right Column: Inquiry Form */}
           <form onSubmit={submit} className="glass rounded-3xl p-8 md:p-10 shadow-soft space-y-4">
-            <h2 className="font-display text-xl font-bold mb-2">Send us a message</h2>
-            <Field label="Name">
-              <input required name="name" className="input" placeholder="Your full name" />
+            <h2 className="font-display text-xl font-bold mb-2 text-foreground">
+              {language === "sl" ? "Pošljite nam sporočilo" : "Send us a message"}
+            </h2>
+
+            <Field label={language === "sl" ? "Ime in priimek" : "Name"}>
+              <input
+                required
+                name="name"
+                className="input"
+                placeholder={language === "sl" ? "Vaše polno ime" : "Your full name"}
+              />
             </Field>
-            <Field label="Email">
-              <input required type="email" name="email" className="input" placeholder="you@email.com" />
+
+            <Field label={language === "sl" ? "E-poštni naslov" : "Email"}>
+              <input
+                required
+                type="email"
+                name="email"
+                className="input"
+                placeholder="you@email.com"
+              />
             </Field>
-            <Field label="Subject">
-              <input required name="subject" className="input" placeholder="How can we help?" />
+
+            <Field label={language === "sl" ? "Zadeva" : "Subject"}>
+              <input
+                required
+                name="subject"
+                className="input"
+                placeholder={language === "sl" ? "Kako vam lahko pomagamo?" : "How can we help?"}
+              />
             </Field>
-            <Field label="Message">
+
+            <Field label={language === "sl" ? "Sporočilo" : "Message"}>
               <textarea
                 required
                 name="message"
                 rows={5}
                 className="input"
-                placeholder="Tell us a little about your trip, dates, or questions..."
+                placeholder={
+                  language === "sl"
+                    ? "Napišite nam nekaj o vaših željah, okvirnih datumih ali vprašanjih..."
+                    : "Tell us a little about your trip, dates, or questions..."
+                }
               />
             </Field>
+
             <button
               type="submit"
               disabled={sending}
               className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-4 text-sm font-semibold text-primary-foreground shadow-soft transition-all hover:bg-accent disabled:opacity-70 cursor-pointer"
             >
               {sending ? (
-                "Sending..."
+                language === "sl" ? "Pošiljanje..." : "Sending..."
               ) : (
                 <>
-                  <span>Send message</span>
+                  <span>{language === "sl" ? "Pošlji sporočilo" : "Send message"}</span>
                   <Send size={16} />
                 </>
               )}
@@ -121,7 +161,7 @@ function Contact() {
           width: 100%;
           border-radius: 0.9rem;
           border: 1px solid var(--color-border);
-          background: rgba(255,255,255,0.8);
+          background: rgba(255,255,255,0.85);
           padding: 0.75rem 1rem;
           font-size: 0.925rem;
           transition: all 0.2s;

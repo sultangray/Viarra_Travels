@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, ArrowRight, Check, PartyPopper, Plus, X, Info } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, PartyPopper, Plus, X, Info, ShieldCheck, FileText, Lock } from "lucide-react";
 import { loadPlanner, savePlanner, clearPlanner, type PlannerData } from "@/lib/planner-store";
+import { useTranslation } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/planner")({
@@ -33,6 +34,7 @@ function Planner() {
   const [data, setData] = useState<any>({});
   const [submitted, setSubmitted] = useState(false);
   const hydrated = useRef(false);
+  const { language } = useTranslation();
 
   useEffect(() => {
     setData(loadPlanner() || {});
@@ -48,7 +50,7 @@ function Planner() {
 
   const progress = useMemo(() => ((step + 1) / SECTIONS.length) * 100, [step]);
 
-  // Strict Validation: Prevents clicking "Next" if required (*) fields are missing
+  // Strict Validation: Prevents clicking "Next" or Submitting if required fields are missing
   const canProceed = () => {
     if (step === 0) return !!data.fullName && !!data.email && !!data.phone;
     if (step === 1) {
@@ -86,7 +88,11 @@ function Planner() {
 
   const next = () => {
     if (!canProceed()) {
-      toast.error("Please fill out all required fields (*) before proceeding.");
+      toast.error(
+        language === "sl"
+          ? "Prosimo, izpolnite vsa obvezna polja (*) pred nadaljevanjem."
+          : "Please fill out all required fields (*) before proceeding."
+      );
       return;
     }
     setStep((s) => Math.min(s + 1, SECTIONS.length - 1));
@@ -100,15 +106,33 @@ function Planner() {
 
   const submit = () => {
     if (!canProceed()) {
-      toast.error("Please ensure all required fields and agreements are checked to submit.");
+      if (!data.termsAck) {
+        toast.error(
+          language === "sl"
+            ? "Pred oddajo morate potrditi pogoje poslovanja s klikom na spodnji gumb."
+            : "Please accept the Terms of Service button before completing your booking."
+        );
+        return;
+      }
+      toast.error(
+        language === "sl"
+          ? "Prosimo, potrdite vsa obvezna polja in izjave pred oddajo."
+          : "Please ensure all required declarations are accepted before submitting."
+      );
       return;
     }
     setSubmitted(true);
     clearPlanner();
-    toast.success("Your travel plan has been submitted!");
+    toast.success(
+      language === "sl"
+        ? "Vaš potovalni načrt je bil uspešno oddan!"
+        : "Your travel plan has been submitted!"
+    );
   };
 
-  if (submitted) return <SuccessScreen />;
+  if (submitted) return <SuccessScreen language={language} />;
+
+  const isTermsReady = !!data.acknowledged && !!data.supportHoursAck && !!data.termsAck;
 
   return (
     <div className="pt-28 pb-24 px-4 md:px-6 gradient-soft min-h-screen">
@@ -118,15 +142,19 @@ function Planner() {
             Viarra
           </div>
           <div className="inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium">
-            Step {step + 1} of {SECTIONS.length} · {SECTIONS[step]}
+            {language === "sl" ? "Korak" : "Step"} {step + 1} / {SECTIONS.length} · {SECTIONS[step]}
           </div>
-          <h1 className="mt-4 font-display text-4xl md:text-5xl font-bold">Design your trip</h1>
+          <h1 className="mt-4 font-display text-4xl md:text-5xl font-bold">
+            {language === "sl" ? "Oblikujte svoje potovanje" : "Design your trip"}
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your progress is saved automatically. Red asterisks (<span className="text-red-500">*</span>) indicate required fields.
+            {language === "sl"
+              ? "Vaš napredek se samodejno shranjuje. Rdeča zvezdica (*) označuje obvezna polja."
+              : "Your progress is saved automatically. Red asterisks (*) indicate required fields."}
           </p>
         </div>
 
-        {/* Progress Bar & Clickable Section Navigation */}
+        {/* Progress Bar & Clickable Navigation */}
         <div className="mb-8">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary/60">
             <motion.div
@@ -162,38 +190,45 @@ function Planner() {
               exit={{ opacity: 0, x: -24 }}
               transition={{ duration: 0.25 }}
             >
-              {step === 0 && <SectionBasics data={data} set={set} />}
-              {step === 1 && <SectionPassengers data={data} set={set} />}
-              {step === 2 && <SectionDestination data={data} set={set} />}
-              {step === 3 && <SectionPriorities data={data} set={set} />}
-              {step === 4 && <SectionTransport data={data} set={set} />}
-              {step === 5 && <SectionAccommodation data={data} set={set} />}
-              {step === 6 && <SectionItinerary data={data} set={set} />}
-              {step === 7 && <SectionSupport data={data} set={set} />}
+              {step === 0 && <SectionBasics data={data} set={set} language={language} />}
+              {step === 1 && <SectionPassengers data={data} set={set} language={language} />}
+              {step === 2 && <SectionDestination data={data} set={set} language={language} />}
+              {step === 3 && <SectionPriorities data={data} set={set} language={language} />}
+              {step === 4 && <SectionTransport data={data} set={set} language={language} />}
+              {step === 5 && <SectionAccommodation data={data} set={set} language={language} />}
+              {step === 6 && <SectionItinerary data={data} set={set} language={language} />}
+              {step === 7 && <SectionSupport data={data} set={set} language={language} />}
             </motion.div>
           </AnimatePresence>
 
-          <div className="mt-10 flex items-center justify-between">
+          <div className="mt-10 flex items-center justify-between pt-4 border-t border-border/40">
             <button
               onClick={prev}
               disabled={step === 0}
-              className="inline-flex items-center gap-2 rounded-full glass px-5 py-3 text-sm font-medium disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-full glass px-5 py-3 text-sm font-medium disabled:opacity-50 cursor-pointer"
             >
-              <ArrowLeft size={16} /> Back
+              <ArrowLeft size={16} /> {language === "sl" ? "Nazaj" : "Back"}
             </button>
             {step < SECTIONS.length - 1 ? (
               <button
                 onClick={next}
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-soft hover:bg-accent transition-all"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-soft hover:bg-accent transition-all cursor-pointer"
               >
-                Next <ArrowRight size={16} />
+                {language === "sl" ? "Naprej" : "Next"} <ArrowRight size={16} />
               </button>
             ) : (
               <button
                 onClick={submit}
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-soft hover:bg-accent transition-all"
+                disabled={!isTermsReady}
+                className={`inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold shadow-soft transition-all cursor-pointer ${
+                  isTermsReady
+                    ? "bg-primary text-primary-foreground hover:bg-accent hover:shadow-lg"
+                    : "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+                }`}
               >
-                Submit plan <Check size={16} />
+                {!isTermsReady && <Lock size={15} />}
+                {language === "sl" ? "Potrdi in oddaj načrt" : "Complete booking & submit"}
+                {isTermsReady && <Check size={16} />}
               </button>
             )}
           </div>
@@ -270,21 +305,24 @@ function Grid({ children }: { children: React.ReactNode }) {
 }
 
 /* ---------- Section 1: Basics ---------- */
-function SectionBasics({ data, set }: any) {
+function SectionBasics({ data, set, language }: any) {
   return (
     <div className="space-y-6">
-      <SectionHeader title="Basic information" desc="Let's start with the essentials." />
+      <SectionHeader
+        title={language === "sl" ? "Osnovni podatki" : "Basic information"}
+        desc={language === "sl" ? "Začnimo z osnovnimi podatki za rezervacijo." : "Let's start with the essentials."}
+      />
       <div className="text-sm font-semibold text-primary/80 uppercase tracking-wide border-b pb-2">
-        Reservation Holder
+        {language === "sl" ? "Nosilec rezervacije" : "Reservation Holder"}
       </div>
       <Grid>
-        <Field label="Full name" required>
+        <Field label={language === "sl" ? "Ime in priimek" : "Full name"} required>
           <input className="input" value={data.fullName ?? ""} onChange={(e) => set("fullName", e.target.value)} />
         </Field>
-        <Field label="Email" required>
+        <Field label={language === "sl" ? "E-poštni naslov" : "Email"} required>
           <input className="input" type="email" value={data.email ?? ""} onChange={(e) => set("email", e.target.value)} />
         </Field>
-        <Field label="Phone" required>
+        <Field label={language === "sl" ? "Telefonska številka" : "Phone"} required>
           <input className="input" value={data.phone ?? ""} onChange={(e) => set("phone", e.target.value)} />
         </Field>
         <Field label="WhatsApp">
@@ -296,7 +334,7 @@ function SectionBasics({ data, set }: any) {
 }
 
 /* ---------- Section 2: Passengers ---------- */
-function SectionPassengers({ data, set }: any) {
+function SectionPassengers({ data, set, language }: any) {
   const passengers = data.passengers ?? [
     { name: data.fullName || "", nationality: "", gender: "", isChild: false, age: "", needsStroller: false, specialAssistance: false }
   ];
@@ -318,7 +356,10 @@ function SectionPassengers({ data, set }: any) {
 
   return (
     <div className="space-y-6">
-      <SectionHeader title="Passengers" desc="Tell us who's travelling." />
+      <SectionHeader
+        title={language === "sl" ? "Potniki" : "Passengers"}
+        desc={language === "sl" ? "Vnesite podatke o vseh potnikih." : "Tell us who's travelling."}
+      />
 
       <datalist id="country-list">
         <option value="Slovenia" />
@@ -329,7 +370,6 @@ function SectionPassengers({ data, set }: any) {
         <option value="Hungary" />
         <option value="United Kingdom" />
         <option value="United States" />
-        <option value="Australia" />
         <option value="Other" />
       </datalist>
 
@@ -346,28 +386,28 @@ function SectionPassengers({ data, set }: any) {
               </button>
             )}
             <div className="font-semibold text-sm">
-              Passenger {i + 1} {i === 0 && "(Lead Traveler / Reservation Holder)"}
+              {language === "sl" ? "Potnik" : "Passenger"} {i + 1} {i === 0 && (language === "sl" ? "(Nosilec rezervacije)" : "(Lead Traveler)")}
             </div>
             <Grid>
-              <Field label="Full Name" required>
+              <Field label={language === "sl" ? "Ime in priimek" : "Full Name"} required>
                 <input className="input" value={p.name} onChange={(e) => updatePassenger(i, "name", e.target.value)} />
               </Field>
-              <Field label="Nationality" required>
+              <Field label={language === "sl" ? "Državljanstvo" : "Nationality"} required>
                 <input
                   className="input"
                   list="country-list"
-                  placeholder="Select or start typing..."
+                  placeholder={language === "sl" ? "Izberite ali vpišite..." : "Select or start typing..."}
                   value={p.nationality}
                   onChange={(e) => updatePassenger(i, "nationality", e.target.value)}
                 />
               </Field>
-              <Field label="Gender">
+              <Field label={language === "sl" ? "Spol" : "Gender"}>
                 <select className="select" value={p.gender} onChange={(e) => updatePassenger(i, "gender", e.target.value)}>
-                  <option value="">Select gender...</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                  <option value="Prefer not to say">Prefer not to say</option>
+                  <option value="">{language === "sl" ? "Izberite spol..." : "Select gender..."}</option>
+                  <option value="Male">{language === "sl" ? "Moški" : "Male"}</option>
+                  <option value="Female">{language === "sl" ? "Ženska" : "Female"}</option>
+                  <option value="Other">{language === "sl" ? "Drugo" : "Other"}</option>
+                  <option value="Prefer not to say">{language === "sl" ? "Ne želim opredeliti" : "Prefer not to say"}</option>
                 </select>
               </Field>
             </Grid>
@@ -379,7 +419,7 @@ function SectionPassengers({ data, set }: any) {
                   checked={p.isChild}
                   onChange={(e) => updatePassenger(i, "isChild", e.target.checked)}
                 />
-                This person is a child
+                {language === "sl" ? "Ta oseba je otrok" : "This person is a child"}
               </label>
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input
@@ -387,13 +427,13 @@ function SectionPassengers({ data, set }: any) {
                   checked={p.specialAssistance}
                   onChange={(e) => updatePassenger(i, "specialAssistance", e.target.checked)}
                 />
-                Needs special assistance
+                {language === "sl" ? "Potrebuje posebno pomoč" : "Needs special assistance"}
               </label>
             </div>
 
             {p.isChild && (
               <div className="bg-white p-4 rounded-lg border mt-2 space-y-3">
-                <Field label="Age of child">
+                <Field label={language === "sl" ? "Starost otroka" : "Age of child"}>
                   <input
                     className="input"
                     type="number"
@@ -410,7 +450,7 @@ function SectionPassengers({ data, set }: any) {
                     checked={p.needsStroller}
                     onChange={(e) => updatePassenger(i, "needsStroller", e.target.checked)}
                   />
-                  Needs to transport a stroller or pram
+                  {language === "sl" ? "Potreben je prevoz otroškega vozička" : "Needs to transport a stroller or pram"}
                 </label>
               </div>
             )}
@@ -420,9 +460,9 @@ function SectionPassengers({ data, set }: any) {
         <button
           type="button"
           onClick={addPassenger}
-          className="inline-flex items-center gap-2 rounded-full border-2 border-dashed border-primary/40 text-primary px-4 py-2.5 text-sm font-medium hover:bg-primary/5 w-full justify-center transition-all"
+          className="inline-flex items-center gap-2 rounded-full border-2 border-dashed border-primary/40 text-primary px-4 py-2.5 text-sm font-medium hover:bg-primary/5 w-full justify-center transition-all cursor-pointer"
         >
-          <Plus size={16} /> Add passenger
+          <Plus size={16} /> {language === "sl" ? "Dodaj potnika" : "Add passenger"}
         </button>
       </div>
     </div>
@@ -430,10 +470,13 @@ function SectionPassengers({ data, set }: any) {
 }
 
 /* ---------- Section 3: Destination ---------- */
-function SectionDestination({ data, set }: any) {
+function SectionDestination({ data, set, language }: any) {
   return (
     <div className="space-y-6">
-      <SectionHeader title="Destination" desc="Where do you want to go?" />
+      <SectionHeader
+        title={language === "sl" ? "Destinacija" : "Destination"}
+        desc={language === "sl" ? "Kam si želite odpotovati?" : "Where do you want to go?"}
+      />
 
       <div className="p-4 rounded-xl border bg-primary/5 mb-4">
         <label className="flex items-center gap-3 text-sm font-medium cursor-pointer mb-2">
@@ -443,32 +486,34 @@ function SectionDestination({ data, set }: any) {
             checked={!!data.flexibleDestination}
             onChange={(e) => set("flexibleDestination", e.target.checked)}
           />
-          I am flexible with the destination
+          {language === "sl" ? "Destinacija mi je prilagodljiva" : "I am flexible with the destination"}
         </label>
         {data.flexibleDestination && (
           <p className="text-xs text-muted-foreground ml-7">
-            e.g. "My budget is €600 per person and I don't mind the exact spot, as long as it's warm and by the coast."
+            {language === "sl"
+              ? "primer: »Moj proračun je 600€ na osebo in lokacija ni pomembna, le da je toplo in ob morju.«"
+              : "e.g. \"My budget is €600 per person and I don't mind the exact spot, as long as it's warm and by the coast.\""}
           </p>
         )}
       </div>
 
       {!data.flexibleDestination && (
         <Grid>
-          <Field label="Main Destination" required>
+          <Field label={language === "sl" ? "Glavna destinacija" : "Main Destination"} required>
             <input className="input" placeholder="e.g. Lisbon, Portugal" value={data.destination ?? ""} onChange={(e) => set("destination", e.target.value)} />
           </Field>
-          <Field label="Multiple countries or cities?">
+          <Field label={language === "sl" ? "Več mest ali držav?" : "Multiple countries or cities?"}>
             <input className="input" placeholder="e.g. 3 days Bangkok, 5 days Phuket" value={data.multipleCountries ?? ""} onChange={(e) => set("multipleCountries", e.target.value)} />
           </Field>
         </Grid>
       )}
 
       {data.flexibleDestination && (
-        <Field label="Describe your ideal destination (Vibe, Weather, Budget)" required>
+        <Field label={language === "sl" ? "Opišite vašo idealno destinacijo (Vreme, vibe, proračun)" : "Describe your ideal destination (Vibe, Weather, Budget)"} required>
           <textarea
             className="textarea"
             rows={3}
-            placeholder="Somewhere hot, near the beach, relaxing atmosphere, budget around €600 pp..."
+            placeholder={language === "sl" ? "Nekje na toplem, blizu plaže, sproščen oddih, proračun cca 600€ na osebo..." : "Somewhere hot, near the beach, relaxing atmosphere, budget around €600 pp..."}
             value={data.flexibleDesc ?? ""}
             onChange={(e) => set("flexibleDesc", e.target.value)}
           />
@@ -476,28 +521,28 @@ function SectionDestination({ data, set }: any) {
       )}
 
       <div className="border-t pt-4 mt-4 space-y-4">
-        <Field label="Are your travel dates flexible?" required>
+        <Field label={language === "sl" ? "Ali so datumi potovanja prilagodljivi?" : "Are your travel dates flexible?"} required>
           <ChipGroup
-            options={["Yes", "No"]}
-            value={data.flexibleDates ? "Yes" : data.flexibleDates === false ? "No" : undefined}
-            onChange={(v) => set("flexibleDates", v === "Yes")}
+            options={language === "sl" ? ["Da", "Ne"] : ["Yes", "No"]}
+            value={data.flexibleDates ? (language === "sl" ? "Da" : "Yes") : data.flexibleDates === false ? (language === "sl" ? "Ne" : "No") : undefined}
+            onChange={(v) => set("flexibleDates", v === "Yes" || v === "Da")}
           />
         </Field>
 
         {data.flexibleDates && (
           <div className="space-y-4 bg-secondary/20 p-4 rounded-xl">
-            <Field label="How flexible are your dates?">
+            <Field label={language === "sl" ? "Koliko so prilagodljivi datumi?" : "How flexible are your dates?"}>
               <ChipGroup
                 options={["± 1 day", "± 3 days", "± 7 days", "10+ days"]}
                 value={data.flexibilityAmount}
                 onChange={(v) => set("flexibilityAmount", v)}
               />
             </Field>
-            <Field label="Explain your date flexibility">
+            <Field label={language === "sl" ? "Pojasnite prilagodljivost datumov" : "Explain your date flexibility"}>
               <textarea
                 className="textarea"
                 rows={2}
-                placeholder="e.g. Anytime within the first two weeks of August..."
+                placeholder={language === "sl" ? "Kadarkoli v prvih dveh tednih avgusta..." : "e.g. Anytime within the first two weeks of August..."}
                 value={data.flexibilityNotes ?? ""}
                 onChange={(e) => set("flexibilityNotes", e.target.value)}
               />
@@ -506,15 +551,15 @@ function SectionDestination({ data, set }: any) {
         )}
 
         <Grid>
-          <Field label="Start date" required>
+          <Field label={language === "sl" ? "Datum začetka" : "Start date"} required>
             <input className="input" type="date" value={data.startDate ?? ""} onChange={(e) => set("startDate", e.target.value)} />
           </Field>
           {!data.flexibleDates && (
-            <Field label="End date" required>
+            <Field label={language === "sl" ? "Datum zaključka" : "End date"} required>
               <input className="input" type="date" value={data.endDate ?? ""} onChange={(e) => set("endDate", e.target.value)} />
             </Field>
           )}
-          <Field label="Duration (nights)" required>
+          <Field label={language === "sl" ? "Trajanje (število nočitev)" : "Duration (nights)"} required>
             <input className="input" type="number" min={1} placeholder="e.g. 7" value={data.duration ?? ""} onChange={(e) => set("duration", e.target.value)} />
           </Field>
         </Grid>
@@ -524,24 +569,27 @@ function SectionDestination({ data, set }: any) {
 }
 
 /* ---------- Section 4: Priorities ---------- */
-function SectionPriorities({ data, set }: any) {
+function SectionPriorities({ data, set, language }: any) {
   return (
     <div className="space-y-6">
-      <SectionHeader title="Priorities" desc="What matters most for this trip?" />
-      <Field label="Travel style (Select multiple)">
+      <SectionHeader
+        title={language === "sl" ? "Prioritete" : "Priorities"}
+        desc={language === "sl" ? "Kaj vam je na potovanju najpomembneje?" : "What matters most for this trip?"}
+      />
+      <Field label={language === "sl" ? "Stil potovanja (možna večkratna izbira)" : "Travel style (Select multiple)"}>
         <ChipGroup multi options={["Relaxed", "Balanced", "Adventure", "Luxury", "No preference"]} value={data.travelStylePref} onChange={(v) => set("travelStylePref", v)} />
       </Field>
-      <Field label="Accommodation comfort (Select multiple)">
+      <Field label={language === "sl" ? "Nivo udobja nastanitve (možna večkratna izbira)" : "Accommodation comfort (Select multiple)"}>
         <ChipGroup multi options={["Basic", "Medium", "Comfort", "Luxury"]} value={data.accommodationComfort} onChange={(v) => set("accommodationComfort", v)} />
       </Field>
-      <Field label="Budget flexibility">
+      <Field label={language === "sl" ? "Prilagodljivost proračuna" : "Budget flexibility"}>
         <ChipGroup options={["Maintain strict budget", "Increase comfort if worth it", "Compromise if needed"]} value={data.budgetFlexibility} onChange={(v) => set("budgetFlexibility", v)} />
       </Field>
-      <Field label="Any specific wishes or requirements? (Open question)">
+      <Field label={language === "sl" ? "Posebne želje ali zahteve? (Odprto vprašanje)" : "Any specific wishes or requirements? (Open question)"}>
         <textarea
           className="textarea"
           rows={3}
-          placeholder="Tell us exactly how you envision your trip..."
+          placeholder={language === "sl" ? "Opišite točno, kako si predstavljate vaše potovanje..." : "Tell us exactly how you envision your trip..."}
           value={data.specificWishes ?? ""}
           onChange={(e) => set("specificWishes", e.target.value)}
         />
@@ -551,55 +599,67 @@ function SectionPriorities({ data, set }: any) {
 }
 
 /* ---------- Section 5: Transport ---------- */
-function SectionTransport({ data, set }: any) {
+function SectionTransport({ data, set, language }: any) {
   return (
     <div className="space-y-6">
-      <SectionHeader title="Transport" desc="Getting there and getting around." />
+      <SectionHeader
+        title={language === "sl" ? "Prevoz" : "Transport"}
+        desc={language === "sl" ? "Prihod na destinacijo in prevozi po njej." : "Getting there and getting around."}
+      />
       <Grid>
-        <Field label="Departure city" required>
+        <Field label={language === "sl" ? "Mesto odhoda" : "Departure city"} required>
           <input className="input" placeholder="e.g. Ljubljana, Maribor" value={data.departureCity ?? ""} onChange={(e) => set("departureCity", e.target.value)} />
         </Field>
-        <Field label="Preferred nearby airport(s)">
+        <Field label={language === "sl" ? "Želeno bližnje letališče" : "Preferred nearby airport(s)"}>
           <input className="input" placeholder="e.g. Vienna, Budapest, Venice, Zagreb" value={data.preferredAirport ?? ""} onChange={(e) => set("preferredAirport", e.target.value)} />
         </Field>
       </Grid>
 
       <div className="bg-secondary/20 p-4 rounded-xl space-y-3">
-        <p className="text-sm font-semibold">Extra Transport Logistics</p>
+        <p className="text-sm font-semibold">{language === "sl" ? "Dodatna logistika prevozov" : "Extra Transport Logistics"}</p>
         <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-          <Toggle label="Help transport city to airport" value={data.transportCityToAirport} onChange={(v) => set("transportCityToAirport", v)} />
-          <Toggle label="Help me with parking" value={data.parkingRequired} onChange={(v) => set("parkingRequired", v)} />
-          <Toggle label="Return to exact same airport?" value={data.returnSameAirport} onChange={(v) => set("returnSameAirport", v)} />
-          <Toggle label="Transfer airport to hotel" value={data.transferToHotel} onChange={(v) => set("transferToHotel", v)} />
-          <Toggle label="Transfer hotel to airport" value={data.transferToAirport} onChange={(v) => set("transferToAirport", v)} />
+          <Toggle
+            label={language === "sl" ? "Pomoč s prevozom od doma do letališča" : "Help transport from your city to airport"}
+            value={data.transportCityToAirport}
+            onChange={(v) => set("transportCityToAirport", v)}
+          />
+          <Toggle
+            label={language === "sl" ? "Pomoč s prevozom z letališča do doma" : "Help transport from airport to your city"}
+            value={data.transportAirportToCity}
+            onChange={(v) => set("transportAirportToCity", v)}
+          />
+          <Toggle label={language === "sl" ? "Pomoč s parkiranjem" : "Help me with parking"} value={data.parkingRequired} onChange={(v) => set("parkingRequired", v)} />
+          <Toggle label={language === "sl" ? "Vrnitev na isto letališče?" : "Return to exact same airport?"} value={data.returnSameAirport} onChange={(v) => set("returnSameAirport", v)} />
+          <Toggle label={language === "sl" ? "Transfer letališče do hotela" : "Transfer airport to hotel"} value={data.transferToHotel} onChange={(v) => set("transferToHotel", v)} />
+          <Toggle label={language === "sl" ? "Transfer hotel do letališča" : "Transfer hotel to airport"} value={data.transferToAirport} onChange={(v) => set("transferToAirport", v)} />
         </div>
       </div>
 
-      <Field label="Main transport to destination (Select only one)" required>
+      <Field label={language === "sl" ? "Glavni prevoz do destinacije (izberite enega)" : "Main transport to destination (Select only one)"} required>
         <ChipGroup multi={false} options={["Plane", "Bus", "Train", "Self-drive", "Recommend me the best"]} value={data.mainTransport} onChange={(v) => set("mainTransport", v)} />
       </Field>
 
-      <Field label="Destination transport (How will you get around while there?)" required>
+      <Field label={language === "sl" ? "Prevoz na destinaciji" : "Destination transport"} required>
         <ChipGroup multi options={["Car rental", "Scooter", "Taxi / Uber", "Public transport", "Recommend me what's best"]} value={data.destinationTransport} onChange={(v) => set("destinationTransport", v)} />
       </Field>
 
       <Grid>
-        <Field label="Main Transport Budget (Total)" required>
+        <Field label={language === "sl" ? "Proračun za glavni prevoz (skupaj)" : "Main Transport Budget (Total)"} required>
           <input className="input" placeholder="e.g. €500" value={data.transportBudget ?? ""} onChange={(e) => set("transportBudget", e.target.value)} />
         </Field>
-        {data.transportCityToAirport && (
-          <Field label="Budget to get to departure airport / station" required>
-            <input className="input" placeholder="e.g. €50 for Flixbus / train" value={data.airportTransportBudget ?? ""} onChange={(e) => set("airportTransportBudget", e.target.value)} />
+        {(data.transportCityToAirport || data.transportAirportToCity) && (
+          <Field label={language === "sl" ? "Proračun za prevoz do ali z letališča" : "Budget for transport to or from airport"} required>
+            <input className="input" placeholder="e.g. €50 for Flixbus / train / shuttle" value={data.airportTransportBudget ?? ""} onChange={(e) => set("airportTransportBudget", e.target.value)} />
           </Field>
         )}
       </Grid>
 
       <div className="border-t pt-4 mt-4 space-y-4">
-        <p className="text-sm font-semibold">Flight Preferences & Luggage</p>
+        <p className="text-sm font-semibold">{language === "sl" ? "Preference glede letov in prtljage" : "Flight Preferences & Luggage"}</p>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Amount of layovers" required>
+          <Field label={language === "sl" ? "Število postankov (prestopov)" : "Amount of layovers"} required>
             <select className="select" value={data.layovers ?? ""} onChange={(e) => set("layovers", e.target.value)}>
-              <option value="">Select amount...</option>
+              <option value="">{language === "sl" ? "Izberite število..." : "Select amount..."}</option>
               <option value="Direct flight only (0)">Direct flight only (0)</option>
               <option value="Max 1 layover">Max 1 layover</option>
               <option value="Max 2 layovers">Max 2 layovers</option>
@@ -607,17 +667,17 @@ function SectionTransport({ data, set }: any) {
             </select>
           </Field>
           <div className="pt-6">
-            <Toggle label="Willing to travel with Carry-ons ONLY? (Cheaper)" value={data.carryOnOnly} onChange={(v) => set("carryOnOnly", v)} />
+            <Toggle label={language === "sl" ? "Le ročna prtljaga? (Ceneje)" : "Willing to travel with Carry-ons ONLY? (Cheaper)"} value={data.carryOnOnly} onChange={(v) => set("carryOnOnly", v)} />
           </div>
         </div>
 
         {!data.carryOnOnly && (
-          <Field label="Checked luggage details (Who needs how much?)">
+          <Field label={language === "sl" ? "Oddana prtljaga (Kdo potrebuje koliko?)" : "Checked luggage details (Who needs how much?)"}>
             <textarea className="textarea" rows={2} placeholder="e.g. Passenger 1: 20kg, Passenger 2: 10kg..." value={data.luggageDetails ?? ""} onChange={(e) => set("luggageDetails", e.target.value)} />
           </Field>
         )}
 
-        <Field label="Transport specific notes or recommendations you want from us?">
+        <Field label={language === "sl" ? "Dodatne opombe glede prevozov ali priporočila" : "Transport specific notes or recommendations you want from us?"}>
           <textarea className="textarea" rows={2} placeholder="e.g. We can depart from Budapest if flights are cheaper than Vienna..." value={data.transportNotes ?? ""} onChange={(e) => set("transportNotes", e.target.value)} />
         </Field>
       </div>
@@ -626,12 +686,15 @@ function SectionTransport({ data, set }: any) {
 }
 
 /* ---------- Section 6: Accommodation ---------- */
-function SectionAccommodation({ data, set }: any) {
+function SectionAccommodation({ data, set, language }: any) {
   return (
     <div className="space-y-6">
-      <SectionHeader title="Accommodation" desc="Where would you like to stay?" />
+      <SectionHeader
+        title={language === "sl" ? "Nastanitev" : "Accommodation"}
+        desc={language === "sl" ? "Kje bi želeli bivati?" : "Where would you like to stay?"}
+      />
 
-      <Field label="Accommodation types (Select multiple)" required>
+      <Field label={language === "sl" ? "Vrste nastanitve (možna večkratna izbira)" : "Accommodation types (Select multiple)"} required>
         <ChipGroup
           multi
           options={["Hotel", "Apartment", "Villa", "Guesthouse", "Hostel (Shared)", "Hostel (Private)", "Hostel (Female Dorm)", "Eco Lodge", "Resort"]}
@@ -640,7 +703,7 @@ function SectionAccommodation({ data, set }: any) {
         />
       </Field>
 
-      <Field label="What matters most for location? (Select multiple)" required>
+      <Field label={language === "sl" ? "Kaj je najpomembnejše za lokacijo?" : "What matters most for location? (Select multiple)"} required>
         <ChipGroup
           multi
           options={["Close to city centre", "Quiet location", "Close to the beach", "Close to nature", "Not too important", "I'll leave it up to you"]}
@@ -649,7 +712,7 @@ function SectionAccommodation({ data, set }: any) {
         />
       </Field>
 
-      <Field label="Meals" required>
+      <Field label={language === "sl" ? "Prehrana" : "Meals"} required>
         <ChipGroup
           options={["None / Without", "Breakfast", "Half board", "All inclusive", "Leave it up to me to check if worth it"]}
           value={data.meals}
@@ -658,15 +721,15 @@ function SectionAccommodation({ data, set }: any) {
       </Field>
 
       <Grid>
-        <Field label="Budget priority" required>
+        <Field label={language === "sl" ? "Prioriteta proračuna za nastanitev" : "Budget priority for accommodation"} required>
           <ChipGroup options={["Lowest price", "Best value for my budget", "Comfort / Luxury"]} value={data.budgetPriority} onChange={(v) => set("budgetPriority", v)} />
         </Field>
-        <Field label="Budget per night (per person)" required>
+        <Field label={language === "sl" ? "Proračun na nočitev (na osebo)" : "Budget per night (per person)"} required>
           <input className="input" placeholder="e.g. €50" value={data.budgetPerNight ?? ""} onChange={(e) => set("budgetPerNight", e.target.value)} />
         </Field>
       </Grid>
 
-      <Field label="Special requests">
+      <Field label={language === "sl" ? "Posebne želje pri nastanitvi" : "Special requests"}>
         <textarea
           className="textarea"
           rows={2}
@@ -677,7 +740,7 @@ function SectionAccommodation({ data, set }: any) {
       </Field>
 
       <div className="border-t pt-4 mt-4 space-y-4">
-        <Field label="Booking preference" required>
+        <Field label={language === "sl" ? "Izbira načina rezervacije" : "Booking preference"} required>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div
               className={`p-4 rounded-xl border cursor-pointer transition-all ${
@@ -685,8 +748,14 @@ function SectionAccommodation({ data, set }: any) {
               }`}
               onClick={() => set("bookingPreference", "Book yourself")}
             >
-              <div className="font-semibold mb-1">Book Yourself</div>
-              <div className="text-xs text-muted-foreground">I send you exact steps and direct links on how to book everything.</div>
+              <div className="font-semibold mb-1">
+                {language === "sl" ? "Rezervirate sami" : "Book Yourself"}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {language === "sl"
+                  ? "Pošljem vam neposredne povezave in navodila za samostojno rezervacijo."
+                  : "I send you exact steps and direct links on how to book everything."}
+              </div>
             </div>
             <div
               className={`p-4 rounded-xl border cursor-pointer transition-all ${
@@ -694,29 +763,47 @@ function SectionAccommodation({ data, set }: any) {
               }`}
               onClick={() => set("bookingPreference", "Transfer to me")}
             >
-              <div className="font-semibold mb-1">Book For Me (Transfer)</div>
-              <div className="text-xs text-muted-foreground">You transfer the funds to me, and I handle the exact bookings for you.</div>
+              <div className="font-semibold mb-1">
+                {language === "sl" ? "Rezervacijo opravimo mi (nakazilo)" : "Book For Me (Transfer)"}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {language === "sl"
+                  ? "Sredstva nakažete meni, jaz pa v vašem imenu opravim natančne rezervacije."
+                  : "You transfer the funds to me, and I handle the exact bookings for you."}
+              </div>
             </div>
           </div>
         </Field>
 
         {data.bookingPreference === "Book yourself" && (
-          <div className="bg-orange-50 text-orange-800 p-4 rounded-xl text-sm border border-orange-200">
-            <strong>Zadeva: Končna izbira – povezave za rezervacijo</strong><br /><br />
-            Pozdravljeni,<br />
-            na podlagi vaše potrditve spodaj označite končne izbire, nato vam pošljem neposredne povezave za rezervacijo.<br /><br />
-            <strong>Pomembno glede cen:</strong><br />
-            Cene prevozov in nastanitev so dinamične in se lahko spreminjajo tudi večkrat dnevno. Priporočam, da rezervacijo opravite čim prej, saj s tem zmanjšate tveganje spremembe cene ali razpoložljivosti.<br /><br />
-            Po potrditvi vam pošljem povezave, kjer rezervacijo opravite sami. Pred plačilom preverite datume, imena in pogoje odpovedi.
+          <div className="bg-orange-50 text-orange-800 p-5 rounded-2xl text-sm border border-orange-200 leading-relaxed space-y-3">
+            <div className="font-bold">Zadeva: Končna izbira: povezave za rezervacijo</div>
+            <p>
+              Pozdravljeni,
+              na podlagi vaše potrditve spodaj označite končne izbire, nato vam pošljem neposredne povezave in navodila za rezervacijo.
+            </p>
+            <p>
+              <strong>Pomembno glede cen:</strong><br />
+              Cene prevozov in nastanitev so dinamične in se lahko spreminjajo tudi večkrat dnevno. Priporočam, da rezervacijo opravite čim prej, saj s tem zmanjšate tveganje spremembe cene ali razpoložljivosti.
+            </p>
+            <p>
+              Po potrditvi vam pošljem povezave, kjer rezervacijo opravite sami. Pred plačilom preverite datume, imena in pogoje odpovedi.
+            </p>
           </div>
         )}
 
         {data.bookingPreference === "Transfer to me" && (
-          <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm border border-blue-200">
-            <strong>NAVODILA ZA PLAČILO (če za vas rezerviramo mi)</strong><br /><br />
-            Po potrditvi obrazca nakažite skupni znesek na: <em>[TRR / Revolut]</em><br /><br />
-            Prosimo, da nakazilo izvedete najkasneje <strong>do 17:00 istega delovnega dne</strong>, - hitreje, tem bolje - zaradi hitrega spreminjanja cen. Saj se cene letalskih kart in nastanitev lahko hitro spremenijo.<br /><br />
-            Rezervacija se izvede po prejemu sredstev. Če se cena do trenutka dejanske rezervacije spremeni, vas o tem predhodno obvestim in rezervacijo izvedemo šele po vaši potrditvi.
+          <div className="bg-blue-50 text-blue-900 p-5 rounded-2xl text-sm border border-blue-200 leading-relaxed space-y-3">
+            <div className="font-bold tracking-wide">NAVODILA ZA PLAČILO (če rezervacije opravimo za vas)</div>
+            <p>
+              Po oddaji obrazca bomo preverili razpoložljivost in aktualne cene ter vam po e-pošti poslali ponudbo.
+            </p>
+            <p>
+              Ker se cene in razpoložljivost lahko hitro spremenijo, priporočamo, da smo med rezervacijo v stiku prek sporočil na WhatsAppu. Poslali vam bomo nekaj možnih terminov, vi pa boste izbrali tistega, ko boste dosegljivi. Če vam WhatsApp ne ustreza, lahko komuniciramo tudi po e-pošti ali Viberju.
+            </p>
+            <p>
+              Pred rezervacijo vam bomo poslali končni znesek in podatke za plačilo. Rezervacije bomo opravili, ko bo plačilo vidno na našem računu. Če se cena medtem spremeni, vas bomo o tem obvestili in rezervacijo opravili šele po vaši potrditvi.
+            </p>
           </div>
         )}
       </div>
@@ -725,19 +812,25 @@ function SectionAccommodation({ data, set }: any) {
 }
 
 /* ---------- Section 7: Itinerary ---------- */
-function SectionItinerary({ data, set }: any) {
+function SectionItinerary({ data, set, language }: any) {
   return (
     <div className="space-y-6">
-      <SectionHeader title="Personalised Itinerary" desc="Shape your daily experience." />
+      <SectionHeader
+        title={language === "sl" ? "Personaliziran itinerar" : "Personalised Itinerary"}
+        desc={language === "sl" ? "Oblikujte svoje dnevno doživetje." : "Shape your daily experience."}
+      />
 
       <div className="bg-primary/10 p-4 rounded-xl border border-primary/20 flex gap-3 items-start">
         <Info className="text-primary shrink-0 mt-0.5" size={18} />
         <div className="text-sm">
-          <strong>Note:</strong> Personalised itineraries and priority travel support are <strong>Paid Add-ons</strong>.
+          <strong>{language === "sl" ? "Opomba:" : "Note:"}</strong>{" "}
+          {language === "sl"
+            ? "Personalizirani itinerar in prednostna podpora med potovanjem sta plačljiva dodatka."
+            : "Personalised itineraries and priority travel support are Paid Add-ons."}
         </div>
       </div>
 
-      <Field label="Do you want a daily itinerary?">
+      <Field label={language === "sl" ? "Želite dnevni itinerar?" : "Do you want a daily itinerary?"}>
         <ChipGroup
           options={[
             "Full Service (Transport/Accommodation + Itinerary)",
@@ -751,31 +844,31 @@ function SectionItinerary({ data, set }: any) {
 
       {data.itineraryType && data.itineraryType !== "No Itinerary needed" && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-6 border-t pt-4 mt-4">
-          <Field label="Who are you travelling with? (Helps us suggest suitable activities)">
+          <Field label={language === "sl" ? "S kom potujete? (Pomaga pri predlogih aktivnosti)" : "Who are you travelling with? (Helps us suggest suitable activities)"}>
             <ChipGroup options={["Solo", "Partner / Couple", "Family with kids", "Friends", "Business"]} value={data.travelCompanions} onChange={(v) => set("travelCompanions", v)} />
           </Field>
           <Grid>
-            <Field label="Travel pace">
+            <Field label={language === "sl" ? "Tempo potovanja" : "Travel pace"}>
               <ChipGroup options={["Slow", "Balanced", "Packed"]} value={data.travelPace} onChange={(v) => set("travelPace", v)} />
             </Field>
-            <Field label="Daily structure">
+            <Field label={language === "sl" ? "Dnevna struktura" : "Daily structure"}>
               <ChipGroup options={["Free", "Loose plan", "Detailed plan"]} value={data.dailyStructure} onChange={(v) => set("dailyStructure", v)} />
             </Field>
           </Grid>
-          <Field label="Activities (Select multiple)">
+          <Field label={language === "sl" ? "Želene aktivnosti" : "Activities (Select multiple)"}>
             <ChipGroup multi options={["Sightseeing", "Beach", "Nature", "Shopping", "Culture", "Food", "Nightlife"]} value={data.activities} onChange={(v) => set("activities", v)} />
           </Field>
-          <Field label="Travel vibe (Select multiple)">
+          <Field label={language === "sl" ? "Vibe potovanja" : "Travel vibe (Select multiple)"}>
             <ChipGroup multi options={["Digital nomad", "Slow travel", "Luxury", "Adventure"]} value={data.travelVibe} onChange={(v) => set("travelVibe", v)} />
           </Field>
-          <Field label="Most important goal">
+          <Field label={language === "sl" ? "Najpomembnejši cilj potovanja" : "Most important goal"}>
             <ChipGroup options={["Stress free", "Experiences", "Organisation", "Time optimisation"]} value={data.importantGoal} onChange={(v) => set("importantGoal", v)} />
           </Field>
           <Grid>
-            <Field label="Must-see places">
+            <Field label={language === "sl" ? "Znamenitosti, ki jih morate videti" : "Must-see places"}>
               <textarea className="textarea" rows={2} placeholder="Attractions you definitely want to visit..." value={data.mustSee ?? ""} onChange={(e) => set("mustSee", e.target.value)} />
             </Field>
-            <Field label="Activities to avoid">
+            <Field label={language === "sl" ? "Aktivnosti, ki se jim želite izogniti" : "Activities to avoid"}>
               <textarea className="textarea" rows={2} placeholder="Things you do not enjoy or want to skip..." value={data.avoidActivities ?? ""} onChange={(e) => set("avoidActivities", e.target.value)} />
             </Field>
           </Grid>
@@ -785,70 +878,134 @@ function SectionItinerary({ data, set }: any) {
   );
 }
 
-/* ---------- Section 8: Support & Visas ---------- */
-function SectionSupport({ data, set }: any) {
+/* ---------- Section 8: Support, Visas & Terms Agreement ---------- */
+function SectionSupport({ data, set, language }: any) {
   return (
     <div className="space-y-6">
-      <SectionHeader title="Support & Visas" desc="Final details before we get to work." />
+      <SectionHeader
+        title={language === "sl" ? "Podpora, vizumi in potrditev pogojev" : "Support, Visas & Booking Agreement"}
+        desc={language === "sl" ? "Zadnji korak pred oddajo načrta v pregled." : "Final details before we get to work."}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
+        {/* Support Card without Short Break Price */}
         <div className="p-4 rounded-xl border bg-secondary/20 flex flex-col justify-between">
-          <Field label="Travel support required? (Paid Add-on)" required>
-            <ChipGroup options={["Yes", "No"]} value={data.travelSupport} onChange={(v) => set("travelSupport", v)} />
+          <Field label={language === "sl" ? "Potrebujete podporo med potovanjem? (Dodatek)" : "Travel support required? (Paid Add-on)"} required>
+            <ChipGroup
+              options={language === "sl" ? ["Da", "Ne"] : ["Yes", "No"]}
+              value={data.travelSupport ? (language === "sl" ? "Da" : "Yes") : data.travelSupport === false ? (language === "sl" ? "Ne" : "No") : undefined}
+              onChange={(v) => set("travelSupport", v === "Yes" || v === "Da")}
+            />
           </Field>
-          <div className="mt-3 text-xs text-muted-foreground bg-white/50 p-3 rounded-lg border">
-            <strong>Support Package:</strong> €80 for a short break (up to 5 days). This covers priority communication during your trip for logistical questions, re-routing, or emergencies.
+          <div className="mt-3 text-xs text-muted-foreground bg-white/60 p-3 rounded-lg border leading-relaxed">
+            <strong>{language === "sl" ? "Paket podpore:" : "Support Package:"}</strong>{" "}
+            {language === "sl"
+              ? "Vključuje prednostno komunikacijo med vašim potovanjem za logistična vprašanja, nujne spremembe ali reševanje nepredvidenih situacij."
+              : "Covers priority communication during your trip for logistical questions, re-routing, or emergency support."}
           </div>
         </div>
 
+        {/* Visa Card with Option to Decide Later */}
         <div className="p-4 rounded-xl border bg-secondary/20 flex flex-col justify-between space-y-2">
-          <Field label="Do you need help sorting VISAS?" required>
-            <ChipGroup options={["Yes, handle it for me (Extra fee)", "No, I'll do it myself"]} value={data.visaHelp} onChange={(v) => set("visaHelp", v)} />
+          <Field label={language === "sl" ? "Potrebujete pomoč pri urejanju vizumov?" : "Do you need help sorting VISAS?"} required>
+            <ChipGroup
+              options={
+                language === "sl"
+                  ? ["Da, uredite zame (doplačilo)", "Odločim se kasneje (ko preverite pogoje)", "Ne, uredim sam/a"]
+                  : ["Yes, handle it for me (Extra fee)", "Decide later (once regulations checked)", "No, I'll do it myself"]
+              }
+              value={data.visaHelp}
+              onChange={(v) => set("visaHelp", v)}
+            />
           </Field>
-          <p className="text-xs text-muted-foreground">
-            Checking if you need a visa is free. Having us (or our partner agency) process the documentation requires a handling fee.
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {language === "sl"
+              ? "Preverjanje, ali potrebujete vizum, je brezplačno. Vizumsko pomoč lahko naročite zdaj ali kasneje, ko vas obvestimo o točnih pogojih za vašo destinacijo."
+              : "Checking if you need a visa is free. You can request visa assistance now or decide later once we check and inform you about the regulations."}
           </p>
         </div>
       </div>
 
+      {/* Interactive Terms & Agreement Button Module */}
       <div className="border-t pt-6 space-y-4">
-        <p className="text-sm font-semibold">Terms & Declarations <span className="text-red-500">*</span></p>
+        <div className="rounded-3xl border-2 border-primary/20 bg-primary/5 p-6 space-y-5 shadow-soft">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h3 className="font-display text-base md:text-lg font-bold text-foreground flex items-center gap-2">
+                <ShieldCheck className="text-primary shrink-0" size={22} />
+                {language === "sl" ? "Pogoji poslovanja in potrditev pred rezervacijo" : "Terms of Service & Booking Agreement"}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1 max-w-xl leading-relaxed">
+                {language === "sl"
+                  ? "Pred oddajo obrazca vas prosimo, da preberete spodnje obvestilo, da bomo lahko imeli jasno in prijetno sodelovanje."
+                  : "Before submitting, please review our terms and disclaimers to ensure transparent and reliable cooperation."}
+              </p>
+            </div>
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary underline underline-offset-4 hover:text-accent transition-colors"
+            >
+              <FileText size={14} />
+              {language === "sl" ? "Preberi celotne pogoje in opozorila" : "Read full terms & disclaimer"}
+            </a>
+          </div>
 
-        <label className="flex items-start gap-3 rounded-2xl bg-secondary/40 p-4 cursor-pointer hover:bg-secondary/60 transition-colors">
-          <input
-            type="checkbox"
-            checked={!!data.acknowledged}
-            onChange={(e) => set("acknowledged", e.target.checked)}
-            className="mt-1 h-5 w-5 accent-primary shrink-0 cursor-pointer"
-          />
-          <span className="text-sm">
-            I understand Viarra Travels is a travel <strong>planning service</strong>, not an agency. Service fees cover planning only; flights, accommodation, transport and visa fees are paid directly to providers. <strong>We are not responsible for any flight changes, delays, or cancellations made by third parties.</strong>
-          </span>
-        </label>
+          <div className="space-y-3">
+            <label className="flex items-start gap-3 rounded-2xl bg-white/90 p-4 border border-border/80 cursor-pointer hover:border-primary/50 transition-colors">
+              <input
+                type="checkbox"
+                checked={!!data.acknowledged}
+                onChange={(e) => set("acknowledged", e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-primary shrink-0 cursor-pointer"
+              />
+              <span className="text-xs text-muted-foreground leading-relaxed">
+                {language === "sl"
+                  ? "Razumem, da je Viarra Travels storitev načrtovanja in svetovanja ter ne nastopa kot turistična agencija. Plačila se izvedejo neposredno ponudnikom, Viarra ne odgovarja za odpovedi ali zamude tretjih ponudnikov."
+                  : "I understand Viarra Travels is a travel planning service, not an agency. Service fees cover planning only; flights, accommodation, transport and visa fees are paid directly to providers. We are not responsible for third-party changes or cancellations."}
+              </span>
+            </label>
 
-        <label className="flex items-start gap-3 rounded-2xl bg-secondary/40 p-4 cursor-pointer hover:bg-secondary/60 transition-colors">
-          <input
-            type="checkbox"
-            checked={!!data.supportHoursAck}
-            onChange={(e) => set("supportHoursAck", e.target.checked)}
-            className="mt-1 h-5 w-5 accent-primary shrink-0 cursor-pointer"
-          />
-          <span className="text-sm">
-            I understand that while Priority Support is available as a paid add-on, <strong>support is not 24/7</strong>. Communication and emergency support are bound by specified business hours outlined in the final itinerary package.
-          </span>
-        </label>
+            <label className="flex items-start gap-3 rounded-2xl bg-white/90 p-4 border border-border/80 cursor-pointer hover:border-primary/50 transition-colors">
+              <input
+                type="checkbox"
+                checked={!!data.supportHoursAck}
+                onChange={(e) => set("supportHoursAck", e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-primary shrink-0 cursor-pointer"
+              />
+              <span className="text-xs text-muted-foreground leading-relaxed">
+                {language === "sl"
+                  ? "Razumem, da podpora med potovanjem ni na voljo 24 ur na dan, temveč poteka v okviru določenega delovnega časa."
+                  : "I understand that while Priority Support is available as a paid add-on, support is not 24/7. Communication and emergency support are bound by specified business hours."}
+              </span>
+            </label>
+          </div>
 
-        <label className="flex items-start gap-3 rounded-2xl bg-secondary/40 p-4 cursor-pointer hover:bg-secondary/60 transition-colors">
-          <input
-            type="checkbox"
-            checked={!!data.termsAck}
-            onChange={(e) => set("termsAck", e.target.checked)}
-            className="mt-1 h-5 w-5 accent-primary shrink-0 cursor-pointer"
-          />
-          <span className="text-sm">
-            I have read and agree to the <strong>Terms of Service & Privacy Policy</strong>.
-          </span>
-        </label>
+          {/* Dedicated Terms Acceptance Button */}
+          <button
+            type="button"
+            onClick={() => set("termsAck", !data.termsAck)}
+            className={`w-full py-4 px-6 rounded-2xl font-semibold text-sm flex items-center justify-center gap-3 transition-all cursor-pointer shadow-sm ${
+              data.termsAck
+                ? "bg-emerald-600 text-white shadow-emerald-100 hover:bg-emerald-700"
+                : "bg-white border-2 border-primary/40 text-foreground hover:bg-primary/5 hover:border-primary"
+            }`}
+          >
+            <div
+              className={`h-5 w-5 rounded-full flex items-center justify-center transition-colors shrink-0 ${
+                data.termsAck ? "bg-white text-emerald-600" : "border-2 border-primary/40"
+              }`}
+            >
+              {data.termsAck && <Check size={14} strokeWidth={3} />}
+            </div>
+            <span>
+              {data.termsAck
+                ? (language === "sl" ? "Pogoji poslovanja in pravila so sprejeti ✓" : "Terms of Service & Disclaimer Accepted ✓")
+                : (language === "sl" ? "Kliknite tukaj za sprejem pogojev poslovanja in politike zasebnosti *" : "Click here to agree to Terms of Service & Privacy Policy *")}
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -860,7 +1017,7 @@ function Toggle({ label, value, onChange }: { label: string; value?: boolean; on
     <button
       type="button"
       onClick={() => onChange(!value)}
-      className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all w-full ${
+      className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all w-full cursor-pointer ${
         value ? "bg-primary text-primary-foreground" : "bg-white border hover:border-primary/50"
       }`}
     >
@@ -882,7 +1039,7 @@ function SectionHeader({ title, desc }: { title: string; desc: string }) {
 }
 
 /* ---------- Submission Screen ---------- */
-function SuccessScreen() {
+function SuccessScreen({ language }: { language: string }) {
   return (
     <div className="min-h-screen grid place-items-center px-6 gradient-soft pt-24 pb-24">
       <motion.div
@@ -899,15 +1056,19 @@ function SuccessScreen() {
         >
           <PartyPopper size={36} />
         </motion.div>
-        <h1 className="mt-6 font-display text-3xl md:text-4xl font-bold">Your plan is on its way!</h1>
-        <p className="mt-3 text-muted-foreground">
-          We've received your travel brief. Our team will review it and send your personalised proposal within 48 hours.
+        <h1 className="mt-6 font-display text-3xl md:text-4xl font-bold">
+          {language === "sl" ? "Vaš načrt je na poti!" : "Your plan is on its way!"}
+        </h1>
+        <p className="mt-3 text-muted-foreground leading-relaxed">
+          {language === "sl"
+            ? "Prejeli smo vaš vprašalnik. Naša ekipa ga bo pregledala in vam pripravila celotno ponudbo v roku od 3 do 7 delovnih dni."
+            : "We've received your travel brief. Our team will review it and send your personalised proposal within 48 hours."}
         </p>
         <a
           href="/"
-          className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-primary-foreground shadow-soft hover:bg-accent transition-all"
+          className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-primary-foreground shadow-soft hover:bg-accent transition-all cursor-pointer"
         >
-          Back home
+          {language === "sl" ? "Nazaj na domačo stran" : "Back home"}
         </a>
       </motion.div>
     </div>
