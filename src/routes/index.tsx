@@ -91,7 +91,6 @@ function Home() {
     { name: "Japan", img: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&q=80" },
     { name: "South Africa", img: "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=1200&q=80" },
     { name: "Greece", img: "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=1200&q=80" },
-    { name: "Italy", img: "https://images.unsplash.com/photo-1499602240951-078d17a1a5f8?w=1200&q=80" },
     { name: "Dubai", img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200&q=80" },
     { name: "Iceland", img: "https://images.unsplash.com/photo-1500259571355-332da5cb07aa?w=1200&q=80" },
     { name: "Swiss Alps", img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1200&q=80" },
@@ -242,7 +241,7 @@ function Home() {
         </div>
       </section>
 
-      {/* DESTINATIONS */}
+      {/* DESTINATIONS (9 items in 3-column grid) */}
       <section className="px-6 py-24">
         <div className="mx-auto max-w-7xl">
           <div className="flex items-end justify-between gap-6 flex-wrap">
@@ -259,7 +258,7 @@ function Home() {
             </Link>
           </div>
 
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 md:grid-cols-3">
             {destinations.map((d) => (
               <div key={d.name} className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft">
                 <img
