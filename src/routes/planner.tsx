@@ -19,6 +19,8 @@ export const Route = createFileRoute("/planner")({
   component: Planner,
 });
 
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwPx9Gv-srBSGYYPuMDpJVVw4qsXt5ThL045TZ7yW-DyzT2vPctmQ2iORRILPXF2qBYfw/exec";
+
 const SECTIONS = [
   "Basics",
   "Passengers",
@@ -34,6 +36,7 @@ function Planner() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<any>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const hydrated = useRef(false);
   const { language } = useTranslation();
 
@@ -105,7 +108,7 @@ function Planner() {
     if (index < step) setStep(index);
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!canProceed()) {
       if (!data.termsAck) {
         toast.error(
@@ -122,13 +125,40 @@ function Planner() {
       );
       return;
     }
-    setSubmitted(true);
-    clearPlanner();
-    toast.success(
-      language === "sl"
-        ? "Vaš potovalni načrt je bil uspešno oddan!"
-        : "Your travel plan has been submitted!"
+
+    setSubmitting(true);
+    const loadingToast = toast.loading(
+      language === "sl" ? "Pošiljanje vašega načrta..." : "Submitting your travel plan..."
     );
+
+    try {
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify(data),
+      });
+
+      toast.dismiss(loadingToast);
+      setSubmitting(false);
+      setSubmitted(true);
+      clearPlanner();
+      toast.success(
+        language === "sl"
+          ? "Vaš potovalni načrt je bil uspešno oddan!"
+          : "Your travel plan has been submitted!"
+      );
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      setSubmitting(false);
+      toast.error(
+        language === "sl"
+          ? "Prišlo je do napake pri pošiljanju. Poskusite znova ali nam pišite na WhatsApp."
+          : "Could not submit form. Please try again or reach out on WhatsApp."
+      );
+    }
   };
 
   if (submitted) return <SuccessScreen language={language} />;
@@ -137,37 +167,38 @@ function Planner() {
 
   return (
     <div className="relative min-h-screen pt-28 pb-24 px-4 md:px-6">
-      {/* Background image identical to the main page */}
+      {/* Crisp background photo without the white fog overlay */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <img
           src={heroImg}
-          alt="Tropical background"
+          alt="Tropical beach background"
           className="h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-background/85 backdrop-blur-md" />
+        {/* Cinematic gradient tint ensuring the tropical photo is vibrant while keeping text readable */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/55" />
       </div>
 
       <div className="mx-auto max-w-3xl">
         <div className="text-center mb-8 flex flex-col items-center">
-          <div className="mb-4 text-2xl font-bold tracking-widest text-primary uppercase">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-4 py-1 text-xs font-bold tracking-widest text-white uppercase border border-white/30 shadow-sm">
             Viarra
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-4 py-1.5 text-xs font-medium text-white border border-white/25 shadow-sm">
             {language === "sl" ? "Korak" : "Step"} {step + 1} / {SECTIONS.length} · {SECTIONS[step]}
           </div>
-          <h1 className="mt-4 font-display text-4xl md:text-5xl font-bold text-foreground">
+          <h1 className="mt-4 font-display text-4xl md:text-5xl font-bold text-white drop-shadow-md">
             {language === "sl" ? "Oblikujte svoje potovanje" : "Design your trip"}
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-white/90 drop-shadow">
             {language === "sl"
               ? "Vaš napredek se samodejno shranjuje. Rdeča zvezdica (*) označuje obvezna polja."
               : "Your progress is saved automatically. Red asterisks (*) indicate required fields."}
           </p>
         </div>
 
-        {/* Progress Bar and Clickable Navigation */}
+        {/* Progress Bar and Step Labels */}
         <div className="mb-8">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary/60">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-white/30 backdrop-blur-sm border border-white/20">
             <motion.div
               className="h-full bg-primary"
               initial={false}
@@ -175,15 +206,15 @@ function Planner() {
               transition={{ duration: 0.4 }}
             />
           </div>
-          <div className="mt-3 hidden md:flex justify-between text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+          <div className="mt-3 hidden md:flex justify-between text-[10px] font-semibold text-white/85 uppercase tracking-wider">
             {SECTIONS.map((s, i) => (
               <span
                 key={s}
                 onClick={() => jumpToStep(i)}
-                className={`transition-colors ${
+                className={`transition-colors drop-shadow-sm ${
                   i <= step
-                    ? "text-foreground cursor-pointer hover:text-primary font-semibold"
-                    : "opacity-40 cursor-not-allowed"
+                    ? "text-white cursor-pointer hover:text-white font-bold underline underline-offset-4"
+                    : "text-white/50 cursor-not-allowed"
                 }`}
               >
                 {s}
@@ -192,7 +223,8 @@ function Planner() {
           </div>
         </div>
 
-        <div className="rounded-3xl bg-white/95 backdrop-blur-sm shadow-soft p-6 md:p-10 border border-white/40">
+        {/* Floating Questionnaire Card */}
+        <div className="rounded-3xl bg-white/98 shadow-2xl p-6 md:p-10 border border-white/60 text-foreground">
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
@@ -215,7 +247,7 @@ function Planner() {
           <div className="mt-10 flex items-center justify-between pt-4 border-t border-border/40">
             <button
               onClick={prev}
-              disabled={step === 0}
+              disabled={step === 0 || submitting}
               className="inline-flex items-center gap-2 rounded-full glass px-5 py-3 text-sm font-medium disabled:opacity-50 cursor-pointer"
             >
               <ArrowLeft size={16} /> {language === "sl" ? "Nazaj" : "Back"}
@@ -230,16 +262,18 @@ function Planner() {
             ) : (
               <button
                 onClick={submit}
-                disabled={!isTermsReady}
+                disabled={!isTermsReady || submitting}
                 className={`inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold shadow-soft transition-all cursor-pointer ${
-                  isTermsReady
+                  isTermsReady && !submitting
                     ? "bg-primary text-primary-foreground hover:bg-accent hover:shadow-lg"
                     : "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
                 }`}
               >
                 {!isTermsReady && <Lock size={15} />}
-                {language === "sl" ? "Potrdi in oddaj načrt" : "Complete booking and submit"}
-                {isTermsReady && <Check size={16} />}
+                {submitting
+                  ? (language === "sl" ? "Pošiljanje..." : "Submitting...")
+                  : (language === "sl" ? "Potrdi in oddaj načrt" : "Complete booking and submit")}
+                {isTermsReady && !submitting && <Check size={16} />}
               </button>
             )}
           </div>
@@ -251,7 +285,7 @@ function Planner() {
           width: 100%;
           border-radius: 0.9rem;
           border: 1px solid var(--color-border);
-          background: rgba(255,255,255,0.9);
+          background: rgba(255,255,255,0.95);
           padding: 0.7rem 0.95rem;
           font-size: 0.925rem;
           transition: all 0.2s;
@@ -264,7 +298,7 @@ function Planner() {
         }
         .label { display: block; margin-bottom: 0.4rem; font-size: 0.78rem; font-weight: 500; color: var(--color-muted-foreground); }
         .req { color: #ef4444; margin-left: 3px; font-weight: bold; }
-        .chip { border-radius: 999px; padding: 0.55rem 1rem; font-size: 0.85rem; font-weight: 500; background: rgba(255,255,255,0.85); border: 1px solid var(--color-border); cursor: pointer; transition: all 0.15s; }
+        .chip { border-radius: 999px; padding: 0.55rem 1rem; font-size: 0.85rem; font-weight: 500; background: rgba(245,247,246,0.9); border: 1px solid var(--color-border); cursor: pointer; transition: all 0.15s; }
         .chip:hover { background: var(--color-accent); }
         .chip[data-active="true"] { background: var(--color-primary); color: var(--color-primary-foreground); border-color: transparent; }
       `}</style>
@@ -650,12 +684,10 @@ function SectionTransport({ data, set, language }: any) {
         <ChipGroup multi={false} options={["Plane", "Bus", "Train", "Self-drive", "Recommend me the best"]} value={data.mainTransport} onChange={(v) => set("mainTransport", v)} />
       </Field>
 
-      {/* UPDATED: Transport at the destination */}
       <Field label={language === "sl" ? "Prevoz na destinaciji" : "Transport at the destination"} required>
         <ChipGroup multi options={["Car rental", "Scooter", "Taxi / Uber", "Public transport", "Recommend me what's best"]} value={data.destinationTransport} onChange={(v) => set("destinationTransport", v)} />
       </Field>
 
-      {/* UPDATED: Main Transport Budget (per person) */}
       <Grid>
         <Field label={language === "sl" ? "Proračun za glavni prevoz (na osebo)" : "Main Transport Budget (per person)"} required>
           <input className="input" placeholder="e.g. €500" value={data.transportBudget ?? ""} onChange={(e) => set("transportBudget", e.target.value)} />
@@ -788,7 +820,6 @@ function SectionAccommodation({ data, set, language }: any) {
           </div>
         </Field>
 
-        {/* UPDATED: Book Yourself Exact Copy */}
         {data.bookingPreference === "Book yourself" && (
           <div className="bg-orange-50 text-orange-950 p-5 rounded-2xl text-sm border border-orange-200 leading-relaxed space-y-3">
             <div className="font-bold tracking-wide">
@@ -920,7 +951,6 @@ function SectionSupport({ data, set, language }: any) {
       />
 
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Support Card without Short Break Price */}
         <div className="p-4 rounded-xl border bg-secondary/20 flex flex-col justify-between">
           <Field label={language === "sl" ? "Potrebujete podporo med potovanjem? (Dodatek)" : "Travel support required? (Paid Add-on)"} required>
             <ChipGroup
@@ -937,7 +967,6 @@ function SectionSupport({ data, set, language }: any) {
           </div>
         </div>
 
-        {/* Visa Card with Option to Decide Later */}
         <div className="p-4 rounded-xl border bg-secondary/20 flex flex-col justify-between space-y-2">
           <Field label={language === "sl" ? "Potrebujete pomoč pri urejanju vizumov?" : "Do you need help sorting VISAS?"} required>
             <ChipGroup
